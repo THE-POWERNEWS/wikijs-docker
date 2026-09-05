@@ -1,4 +1,18 @@
-version: "3"
+# Wiki.js + PostgreSQL（検索は Wiki.js 内蔵の Database エンジンを使う）
+#
+# ⚠ 上流（kshinoapp/wikijs-docker-compose-ja）との差分:
+#   - Elasticsearch（`search` サービスと `wikijsindex` volume）を削除した。
+#     日本語検索のために置かれていたが、運用側で索引が作られておらず
+#     検索が無言で何も返さない状態が続いた。ページ数の少ない wiki では
+#     ES の常駐コスト（heap 2GB）に見合わないため、Wiki.js 内蔵の
+#     Database (Basic) エンジンへ切り替えた。
+#   - イメージのタグを固定した。`:2` のような動くタグのままだと、
+#     provisioning が `docker compose pull` を持った時点で、宣言を変えて
+#     いないのにメジャー／マイナーが勝手に上がりうる。**版を上げるのは
+#     このファイルの変更として行う。**
+#
+# ⚠ postgres:11-alpine は PostgreSQL 11（2023-11 EOL）。版の引き上げは
+#   dump / restore を伴うので別作業として扱う。
 services:
   db:
     image: postgres:11-alpine
@@ -10,31 +24,8 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
 
-  search:
-    image: elasticsearch:7.17.6
-    volumes:
-      - wikijsindex:/usr/share/elasticsearch/data
-    environment:
-      - discovery.type=single-node
-      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
-    ulimits:
-      nofile:
-        soft: 65535
-        hard: 65535
-#    ports:
-#      - 9200:9200
-    command:
-      - /bin/sh
-      - -c
-      - "./bin/elasticsearch-plugin list | grep -q analysis-kuromoji
-        || ./bin/elasticsearch-plugin install analysis-kuromoji;
-        ./bin/elasticsearch-plugin list | grep -q analysis-icu
-        || ./bin/elasticsearch-plugin install analysis-icu;
-        /usr/local/bin/docker-entrypoint.sh"
-    restart: unless-stopped
-
   wiki:
-    image: requarks/wiki:2
+    image: requarks/wiki:2.5.314
     depends_on:
       - db
     environment:
@@ -50,4 +41,3 @@ services:
 
 volumes:
   db-data:
-  wikijsindex:
