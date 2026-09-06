@@ -11,11 +11,14 @@
 #     いないのにメジャー／マイナーが勝手に上がりうる。**版を上げるのは
 #     このファイルの変更として行う。**
 #
-# ⚠ postgres:11-alpine は PostgreSQL 11（2023-11 EOL）。版の引き上げは
-#   dump / restore を伴うので別作業として扱う。
+# ⚠ PostgreSQL は 2026-09-07 に 11 → 17 へ引き上げた（pooza/chubo2#221）。
+#   11 は 2023-11 に EOL で、以後セキュリティ修正が出ていなかった。
+#   ⚠⚠ **メジャーを動かすと volume の作り直しが要る**（新しいサーバは古い
+#   PG_VERSION を拒否して起動しない）。dump / restore を伴うので、
+#   このタグを次に動かすときも同じ手順を踏むこと。
 services:
   db:
-    image: postgres:11-alpine
+    image: postgres:17-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-wiki}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wikijsuser}
